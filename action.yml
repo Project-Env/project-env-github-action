@@ -1,11 +1,9 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Project-Env Github Action'
+description: 'Sets up the runner environment with the Project-Env CLI'
 inputs:
-  milliseconds: # change this
+  cli-version:
+    description: 'Version of Project-Env CLI to use'
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
 runs:
   using: 'node12'
   main: 'dist/index.js'
