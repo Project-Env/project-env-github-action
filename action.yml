@@ -1,5 +1,8 @@
 name: 'Project-Env Github Action'
 description: 'Sets up the runner environment with the Project-Env CLI'
+branding:
+  icon: 'box'
+  color: 'gray-dark'
 inputs:
   cli-version:
     description: 'Version of Project-Env CLI to use'
