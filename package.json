@@ -22,7 +22,7 @@
     "@types/jest": "26.0.24",
     "@types/node": "16.3.1",
     "@types/tar": "4.0.5",
-    "@vercel/ncc": "0.28.6",
+    "@vercel/ncc": "0.29.0",
     "jest": "27.0.6",
     "jest-circus": "27.0.6",
     "js-yaml": "4.1.0",
