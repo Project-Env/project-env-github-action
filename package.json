@@ -20,7 +20,7 @@
     "@types/adm-zip": "0.4.34",
     "@types/follow-redirects": "1.13.1",
     "@types/jest": "26.0.24",
-    "@types/node": "16.4.3",
+    "@types/node": "16.4.4",
     "@types/tar": "4.0.5",
     "@vercel/ncc": "0.29.0",
     "jest": "27.0.6",
