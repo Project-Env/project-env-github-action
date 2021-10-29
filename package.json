@@ -21,7 +21,7 @@
     "@types/follow-redirects": "1.13.1",
     "@types/jest": "27.0.2",
     "@types/node": "16.4.13",
-    "@types/tar": "4.0.5",
+    "@types/tar": "6.1.0",
     "@vercel/ncc": "0.31.1",
     "jest": "27.3.1",
     "jest-circus": "27.3.1",
