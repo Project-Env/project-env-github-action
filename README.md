@@ -1,4 +1,7 @@
 # Project-Env Github Action
+
+![Build](https://github.com/Project-Env/project-env-github-action/workflows/Build/badge.svg)
+
 This action sets up the runner environment with the Project-Env shell. See [Project-Env](https://project-env.github.io) for more details about Project-Env.
 
 ## Inputs
