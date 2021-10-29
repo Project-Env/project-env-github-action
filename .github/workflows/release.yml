@@ -35,9 +35,9 @@ jobs:
           path: node_modules
           key: ${{ runner.os }}-nodemodules-${{ hashFiles('package.json') }}
           restore-keys: ${{ runner.os }}-nodemodules
-      - uses: actions/setup-node@v2
+      - uses: Project-Env/project-env-github-action@v1.0.0
         with:
-          node-version: '12'
+          cli-version: '3.3.0'
       - run: npm install
       - run: npm run package
       - uses: actions/create-release@v1
