@@ -13,7 +13,7 @@
     "@actions/core": "1.6.0",
     "@actions/github": "5.0.0",
     "adm-zip": "0.5.9",
-    "follow-redirects": "1.14.4",
+    "follow-redirects": "1.14.5",
     "tar": "6.1.11"
   },
   "devDependencies": {
