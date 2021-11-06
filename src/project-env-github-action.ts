@@ -17,7 +17,9 @@ type AllToolInfos = { [key: string]: ToolInfo[] };
 export default class ProjectEnvGithubAction {
 
     async run() {
-        const cliVersion = core.getInput('cli-version');
+        const cliVersion = core.getInput('cli-version', {required: true});
+        const debug = this.getBooleanInput('cli-debug');
+
         const tempDir = this.createTempDir('project-env');
 
         try {
@@ -26,7 +28,7 @@ export default class ProjectEnvGithubAction {
 
             const executable = this.resolveProjectEnvCliExecutable(tempDir);
 
-            const allToolInfos = await this.executeProjectEnvCli(executable);
+            const allToolInfos = await this.executeProjectEnvCli(executable, debug);
             core.debug(`resulting tool infos: ${JSON.stringify(allToolInfos)}`);
 
             this.processToolInfos(allToolInfos);
@@ -35,6 +37,10 @@ export default class ProjectEnvGithubAction {
         } finally {
             this.cleanTempDir(tempDir);
         }
+    }
+
+    private getBooleanInput(name: string) {
+        return core.getInput(name) === 'true'
     }
 
     private createTempDir(name: string) {
@@ -168,11 +174,16 @@ export default class ProjectEnvGithubAction {
         }
     }
 
-    private async executeProjectEnvCli(executable: string) {
+    private async executeProjectEnvCli(executable: string, debug: boolean) {
         return new Promise<AllToolInfos>((resolve, reject) => {
+            let args = ['--config-file', 'project-env.toml'];
+            if (debug) {
+                args.push('--debug')
+            }
+
             const child = child_process.execFile(
                 executable,
-                ['--config-file', 'project-env.toml'],
+                args,
                 (error, stdout) => {
                     if (error) {
                         reject(error)

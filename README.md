@@ -10,6 +10,10 @@ This action sets up the runner environment with the Project-Env shell. See [Proj
 
 **Required** Version of [Project-Env CLI](https://github.com/Project-Env/project-env-cli) to use.
 
+## `cli-debug`
+
+Whether to activate the debug mode of the [Project-Env CLI](https://github.com/Project-Env/project-env-cli).
+
 ## Example usage
 
 ```shell
