@@ -12888,14 +12888,15 @@ const os = __importStar(__nccwpck_require__(2087));
 class ProjectEnvGithubAction {
     run() {
         return __awaiter(this, void 0, void 0, function* () {
+            const configFile = core.getInput('config-file') || 'project-env.toml';
             const cliVersion = core.getInput('cli-version', { required: true });
-            const debug = this.getBooleanInput('cli-debug');
+            const cliDebug = core.getInput('cli-debug') === 'true';
             const tempDir = this.createTempDir('project-env');
             try {
                 const archive = yield this.downloadProjectEnvCliArchive(cliVersion, tempDir);
                 this.extractProjectEnvCliArchive(archive, tempDir);
                 const executable = this.resolveProjectEnvCliExecutable(tempDir);
-                const allToolInfos = yield this.executeProjectEnvCli(executable, debug);
+                const allToolInfos = yield this.executeProjectEnvCli(executable, configFile, cliDebug);
                 core.debug(`resulting tool infos: ${JSON.stringify(allToolInfos)}`);
                 this.processToolInfos(allToolInfos);
             }
@@ -12906,9 +12907,6 @@ class ProjectEnvGithubAction {
                 this.cleanTempDir(tempDir);
             }
         });
-    }
-    getBooleanInput(name) {
-        return core.getInput(name) === 'true';
     }
     createTempDir(name) {
         return fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
@@ -13023,11 +13021,11 @@ class ProjectEnvGithubAction {
             }
         }
     }
-    executeProjectEnvCli(executable, debug) {
+    executeProjectEnvCli(executable, configFile, debug) {
         return __awaiter(this, void 0, void 0, function* () {
             return new Promise((resolve, reject) => {
                 var _a;
-                let args = ['--config-file', 'project-env.toml'];
+                let args = ['--config-file', configFile];
                 if (debug) {
                     args.push('--debug');
                 }
