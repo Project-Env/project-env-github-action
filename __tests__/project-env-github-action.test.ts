@@ -8,6 +8,7 @@ describe('Project-Env Github Action', () => {
     beforeEach(() => {
         process.env = {
             ...{
+                'INPUT_CONFIG-FILE': '__tests__/project-env.toml',
                 'INPUT_CLI-VERSION': CLI_VERSION,
                 'INPUT_CLI-DEBUG': 'true'
             },
