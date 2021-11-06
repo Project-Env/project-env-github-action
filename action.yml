@@ -7,6 +7,10 @@ inputs:
   cli-version:
     description: 'Version of Project-Env CLI to use'
     required: true
+  cli-debug:
+    description: 'Whether to activate the debug mode of the Project-Env CLI'
+    required: false
+    default: 'false'
 runs:
   using: 'node12'
   main: 'dist/index.js'
