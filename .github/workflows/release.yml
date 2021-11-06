@@ -40,13 +40,6 @@ jobs:
           cli-version: '3.3.0'
       - run: npm install
       - run: npm run package
-      - uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.event.inputs.version }}
-          release_name: v${{ github.event.inputs.version }}
-          draft: true
       - run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -55,3 +48,11 @@ jobs:
         with:
           branch: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          commit: main
+          release_name: v${{ github.event.inputs.version }}
+          draft: true
