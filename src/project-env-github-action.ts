@@ -1,11 +1,9 @@
 import * as core from '@actions/core'
-import {https} from 'follow-redirects'
-import * as path from 'path'
-import * as tar from 'tar'
-import * as child_process from 'child_process'
-import adm_zip from 'adm-zip'
-import * as fs from "fs";
+import * as toolCache from '@actions/tool-cache';
+import * as exec from '@actions/exec';
 import * as os from "os";
+import * as path from 'path'
+import * as fs from "fs";
 
 interface ToolInfo {
     environmentVariables: { [key: string]: string };
@@ -17,17 +15,18 @@ type AllToolInfos = { [key: string]: ToolInfo[] };
 export default class ProjectEnvGithubAction {
 
     async run() {
+        this.fixRunnerEnvironment();
+
         const configFile = core.getInput('config-file') || 'project-env.toml';
         const cliVersion = core.getInput('cli-version', {required: true});
         const cliDebug = core.getInput('cli-debug') === 'true'
 
-        const tempDir = this.createTempDir('project-env');
-
         try {
-            const archive = await this.downloadProjectEnvCliArchive(cliVersion, tempDir);
-            this.extractProjectEnvCliArchive(archive, tempDir);
+            const archiveUrl = await this.resolveProjectEnvCliArchiveUrl(cliVersion);
+            const archive = await toolCache.downloadTool(archiveUrl);
 
-            const executable = this.resolveProjectEnvCliExecutable(tempDir);
+            const extractedArchive = await this.extractProjectEnvCliArchive(archive, archiveUrl);
+            const executable = this.resolveProjectEnvCliExecutable(extractedArchive);
 
             const allToolInfos = await this.executeProjectEnvCli(executable, configFile, cliDebug);
             core.debug(`resulting tool infos: ${JSON.stringify(allToolInfos)}`);
@@ -35,34 +34,23 @@ export default class ProjectEnvGithubAction {
             this.processToolInfos(allToolInfos);
         } catch (error: any) {
             core.setFailed(this.getErrorMessage(error));
-        } finally {
-            this.cleanTempDir(tempDir);
         }
     }
 
-    private createTempDir(name: string) {
-        return fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
-    }
-
-    private cleanTempDir(tempDir: string) {
-        try {
-            fs.rmdirSync(tempDir, {recursive: true})
-        } catch (error: any) {
-            core.debug(`failed to delete temporary directory ${tempDir}: ${error}`)
+    private fixRunnerEnvironment() {
+        if (os.platform() === 'win32') {
+            // Because of any reason, the powershell executable is not registered on the path,
+            // therefore it cannot be used, e.g. in case we are unzipping an archive with the
+            // Github Actions toolkit.
+            core.addPath('C:/Program Files/PowerShell/7')
         }
     }
 
-    private async downloadProjectEnvCliArchive(cliVersion: string, targetDirectory: string) {
+    private async resolveProjectEnvCliArchiveUrl(cliVersion: string) {
         const archiveBaseUrl = this.createProjectEnvCliArchiveBaseUrl(cliVersion);
         const archiveFilename = this.createProjectEnvCliArchiveFilename(cliVersion);
-        const archiveUrl = `${archiveBaseUrl}/${archiveFilename}`;
 
-        const targetFile = path.join(targetDirectory, archiveFilename);
-
-        core.debug(`downloading Project-Env CLI from ${archiveUrl} to ${targetFile}`);
-        await this.downloadArchive(archiveUrl, targetFile);
-
-        return targetFile;
+        return `${archiveBaseUrl}/${archiveFilename}`;
     }
 
     private createProjectEnvCliArchiveBaseUrl(cliVersion: string) {
@@ -101,39 +89,30 @@ export default class ProjectEnvGithubAction {
         }
     }
 
-    private async downloadArchive(url: string, targetFile: string) {
-        const writeStream = fs.createWriteStream(targetFile);
-
-        return new Promise<void>((resolve, reject) => {
-            core.debug(`downloading ${url} to ${targetFile}`);
-
-            https.get(url, response => {
-                if (response.statusCode !== 200) {
-                    reject(`failed to download Project-Env CLI from URL ${url} (404)`);
-                }
-
-                const stream = response.pipe(writeStream);
-                stream.on('finish', () => resolve());
-            }).on('error', e => {
-                reject(e.message);
-            })
-        })
-    }
-
-    private extractProjectEnvCliArchive(archiveFile: string, targetDirectory: string) {
-        if (archiveFile.endsWith('zip')) {
-            this.extractZipArchive(archiveFile, targetDirectory);
+    private async extractProjectEnvCliArchive(archive: string, archiveUrl: string) {
+        if (archiveUrl.endsWith('zip')) {
+            return await toolCache.extractZip(archive);
         } else {
-            this.extractTarGzArchive(archiveFile, targetDirectory);
+            return await toolCache.extractTar(archive);
         }
     }
 
-    private extractZipArchive(archiveFile: string, targetDirectory: string) {
-        new adm_zip(archiveFile).extractAllTo(targetDirectory);
-    }
+    private processToolInfos(allToolInfos: AllToolInfos) {
+        for (const toolName of Object.keys(allToolInfos)) {
+            const toolInfos = allToolInfos[toolName] || [];
+            for (const toolInfo of toolInfos) {
+                const pathElements = toolInfo.pathElements || [];
+                for (const pathElement of pathElements) {
+                    core.addPath(pathElement);
+                }
 
-    private extractTarGzArchive(archiveFile: string, targetDirectory: string) {
-        tar.x({file: archiveFile, C: targetDirectory, sync: true});
+                const environmentVariables = toolInfo.environmentVariables || {};
+                for (const environmentVariableName of Object.keys(environmentVariables)) {
+                    const environmentVariableValue = environmentVariables[environmentVariableName];
+                    core.exportVariable(environmentVariableName, environmentVariableValue);
+                }
+            }
+        }
     }
 
     private resolveProjectEnvCliExecutable(sourceDirectory: string) {
@@ -146,54 +125,27 @@ export default class ProjectEnvGithubAction {
         return executable;
     }
 
+    private async executeProjectEnvCli(executable: string, configFile: string, debug: boolean) {
+        let args = ['--config-file', configFile];
+        if (debug) {
+            args.push('--debug')
+        }
+
+        const stdOutput = await exec.getExecOutput(executable, args, {
+            listeners: {
+                debug: (message) => core.debug(message)
+            }
+        });
+
+        return JSON.parse(stdOutput.stdout);
+    }
+
+    private getExecutableName() {
+        return `project-env-cli${this.getExecutableExtension()}`;
+    }
+
     private getExecutableExtension() {
         return os.platform() === 'win32' ? '.exe' : '';
-    }
-
-    private processToolInfos(allToolInfos: AllToolInfos) {
-        for (const toolName of Object.keys(allToolInfos)) {
-            const toolInfos = allToolInfos[toolName] || [];
-            for (const toolInfo of toolInfos) {
-                const pathElements = toolInfo.pathElements || [];
-                for (const pathElement of pathElements) {
-                    core.debug(`adding ${pathElement} to path`);
-                    core.addPath(pathElement);
-                }
-
-                const environmentVariables = toolInfo.environmentVariables || {};
-                for (const environmentVariableName of Object.keys(environmentVariables)) {
-                    const environmentVariableValue = environmentVariables[environmentVariableName];
-
-                    core.debug(`exporting variable ${environmentVariableName} with value ${environmentVariableValue}`);
-                    core.exportVariable(environmentVariableName, environmentVariableValue);
-                }
-            }
-        }
-    }
-
-    private async executeProjectEnvCli(executable: string, configFile: string, debug: boolean) {
-        return new Promise<AllToolInfos>((resolve, reject) => {
-            let args = ['--config-file', configFile];
-            if (debug) {
-                args.push('--debug')
-            }
-
-            const child = child_process.execFile(
-                executable,
-                args,
-                (error, stdout) => {
-                    if (error) {
-                        reject(error)
-                    } else {
-                        resolve(JSON.parse(stdout))
-                    }
-                }
-            );
-
-            child.stderr?.on('data', data => {
-                core.info(data.trim())
-            });
-        })
     }
 
     private getErrorMessage(error: Error | string): string {
