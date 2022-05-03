@@ -17,7 +17,7 @@
     "@actions/tool-cache": "^1.7.1"
   },
   "devDependencies": {
-    "@types/jest": "27.4.0",
+    "@types/jest": "27.5.0",
     "@types/node": "16.11.6",
     "@vercel/ncc": "0.33.3",
     "jest": "27.5.1",
