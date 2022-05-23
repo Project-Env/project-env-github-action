@@ -15,7 +15,7 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: node_modules
           key: ${{ runner.os }}-nodemodules-${{ hashFiles('package.json') }}
@@ -30,7 +30,7 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         with:
           path: node_modules
           key: ${{ runner.os }}-nodemodules-${{ hashFiles('package.json') }}
