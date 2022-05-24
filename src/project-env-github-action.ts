@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import * as httpClient from '@actions/http-client'
 import * as toolCache from '@actions/tool-cache';
 import * as exec from '@actions/exec';
 import * as os from "os";
@@ -15,13 +16,13 @@ type AllToolInfos = { [key: string]: ToolInfo[] };
 export default class ProjectEnvGithubAction {
 
     async run() {
-        this.fixRunnerEnvironment();
-
-        const configFile = core.getInput('config-file') || 'project-env.toml';
-        const cliVersion = core.getInput('cli-version', {required: true});
-        const cliDebug = core.getInput('cli-debug') === 'true'
-
         try {
+            this.fixRunnerEnvironment();
+
+            const configFile = core.getInput('config-file') || 'project-env.toml';
+            const cliVersion = core.getInput('cli-version') || (await this.resolveLatestProjectEnvCliVersion());
+            const cliDebug = core.getInput('cli-debug') === 'true'
+
             const archiveUrl = await this.resolveProjectEnvCliArchiveUrl(cliVersion);
             const archive = await toolCache.downloadTool(archiveUrl);
 
@@ -44,6 +45,23 @@ export default class ProjectEnvGithubAction {
             // Github Actions toolkit.
             core.addPath('C:/Program Files/PowerShell/7')
         }
+    }
+
+    private async resolveLatestProjectEnvCliVersion() {
+        const response = await new httpClient.HttpClient(undefined, undefined, {allowRedirects: false}).get("https://github.com/Project-Env/project-env-cli/releases/latest")
+
+        const statusCode = response.message.statusCode;
+        const location = response.message.headers.location;
+        if (statusCode !== 302 || !location) {
+            throw new Error("failed to resolve latest Project-Env CLI version");
+        }
+
+        const version = location.match(/.+\/v(.+)$/)?.[1]
+        if (!version) {
+            throw new Error("failed to resolve latest Project-Env CLI version");
+        }
+
+        return version;
     }
 
     private async resolveProjectEnvCliArchiveUrl(cliVersion: string) {
@@ -138,10 +156,6 @@ export default class ProjectEnvGithubAction {
         });
 
         return JSON.parse(stdOutput.stdout);
-    }
-
-    private getExecutableName() {
-        return `project-env-cli${this.getExecutableExtension()}`;
     }
 
     private getExecutableExtension() {

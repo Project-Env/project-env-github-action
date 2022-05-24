@@ -8,7 +8,7 @@ This action sets up the runner environment with the Project-Env shell. See [Proj
 
 ## `cli-version`
 
-**Required** Version of [Project-Env CLI](https://github.com/Project-Env/project-env-cli) to use.
+Version of [Project-Env CLI](https://github.com/Project-Env/project-env-cli) to use. If not specified, the latest version will be used.
 
 ## `cli-debug`
 
