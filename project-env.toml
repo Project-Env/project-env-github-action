@@ -1,4 +1,4 @@
 tools_directory = ".tools"
 
 [nodejs]
-version = "12.22.7"
+version = "16.15.1"
