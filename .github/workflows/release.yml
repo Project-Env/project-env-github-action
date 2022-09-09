@@ -20,7 +20,7 @@ jobs:
           path: node_modules
           key: ${{ runner.os }}-nodemodules-${{ hashFiles('package.json') }}
           restore-keys: ${{ runner.os }}-nodemodules
-      - uses: Project-Env/project-env-github-action@v1.1.0
+      - uses: Project-Env/project-env-github-action@v1.3.0
         with:
           cli-version: '3.4.0'
       - run: npm install
