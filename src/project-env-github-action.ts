@@ -27,6 +27,8 @@ export default class ProjectEnvGithubAction {
             const archive = await toolCache.downloadTool(archiveUrl);
 
             const extractedArchive = await this.extractProjectEnvCliArchive(archive, archiveUrl);
+            core.addPath(extractedArchive);
+
             const executable = this.resolveProjectEnvCliExecutable(extractedArchive);
 
             const allToolInfos = await this.executeProjectEnvCli(executable, configFile, cliDebug);
