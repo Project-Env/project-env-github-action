@@ -2,10 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'The name of the version which should be released'
-        required: true
 
 jobs:
   build:
@@ -21,8 +17,6 @@ jobs:
           key: ${{ runner.os }}-nodemodules-${{ hashFiles('package.json') }}
           restore-keys: ${{ runner.os }}-nodemodules
       - uses: Project-Env/project-env-github-action@v1.3.0
-        with:
-          cli-version: '3.4.0'
       - run: npm install
       - run: npm test
   release:
@@ -46,7 +40,6 @@ jobs:
         with:
           branch: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ github.event.inputs.version }}
-          draft: true
+      - uses: release-drafter/release-drafter@v5.21.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
