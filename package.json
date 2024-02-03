@@ -24,6 +24,6 @@
     "jest-circus": "29.6.1",
     "ts-jest": "28.0.5",
     "typescript": "5.1.6",
-    "npm-check-updates": "16.10.7"
+    "npm-check-updates": "16.14.14"
   }
 }
