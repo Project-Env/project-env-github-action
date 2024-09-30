@@ -69,19 +69,31 @@ export default class ProjectEnvGithubAction {
     private async resolveProjectEnvCliArchiveUrl(cliVersion: string) {
         const archiveBaseUrl = this.createProjectEnvCliArchiveBaseUrl(cliVersion);
         const archiveFilename = this.createProjectEnvCliArchiveFilename(cliVersion);
+        const archiveUrl = `${archiveBaseUrl}/${archiveFilename}`;
 
-        return `${archiveBaseUrl}/${archiveFilename}`;
+        if (this.getOsName() === 'macos' && this.getCpuArch() === 'aarch64' && !(await this.archiveUrlExists(archiveUrl))) {
+            return `${archiveBaseUrl}/${this.createProjectEnvCliArchiveFilename(cliVersion, 'amd64')}`
+        } else {
+            return `${archiveBaseUrl}/${archiveFilename}`
+        }
     }
 
     private createProjectEnvCliArchiveBaseUrl(cliVersion: string) {
         return `https://github.com/Project-Env/project-env-cli/releases/download/v${cliVersion}`;
     }
 
-    private createProjectEnvCliArchiveFilename(cliVersion: string) {
+    private createProjectEnvCliArchiveFilename(cliVersion: string, enforcedCpuArch?: string) {
         const osName = this.getOsName();
+        const cpuArch = enforcedCpuArch ? enforcedCpuArch : this.getCpuArch();
         const fileExt = this.getFileExtension();
 
-        return `cli-${cliVersion}-${osName}-amd64.${fileExt}`;
+        return `cli-${cliVersion}-${osName}-${cpuArch}.${fileExt}`;
+    }
+
+    private async archiveUrlExists(archiveUrl: string) {
+        const response = await new httpClient.HttpClient(undefined, undefined, {allowRedirects: false}).get(archiveUrl)
+
+        return response.message.statusCode === 302;
     }
 
     private getOsName() {
@@ -94,6 +106,26 @@ export default class ProjectEnvGithubAction {
                 return 'windows'
             default:
                 throw new Error(`unsupported OS ${os.platform()}`)
+        }
+    }
+
+    private getCpuArch() {
+        if (os.platform() === 'darwin') {
+            switch (os.arch()) {
+                case "x64":
+                    return 'amd64'
+                case "arm64":
+                    return 'aarch64'
+                default:
+                    throw new Error(`unsupported CPU arch ${process.arch}`)
+            }
+        } else {
+            switch (os.arch()) {
+                case "x64":
+                    return 'amd64'
+                default:
+                    throw new Error(`unsupported CPU arch ${process.arch}`)
+            }
         }
     }
 
