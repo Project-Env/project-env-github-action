@@ -1,11 +1,8 @@
 tools_directory = ".tools"
 
 [jdk]
-distribution = "GraalVM CE 11"
-distribution_version = "20.3.0"
-post_extraction_commands = [
-    "gu install native-image"
-]
+version = "23.1.2"
+distribution = "GraalVM CE 21"
 
 [maven]
 version = "3.6.3"
@@ -14,7 +11,7 @@ version = "3.6.3"
 version = "6.7.1"
 
 [nodejs]
-version = "14.15.3"
+version = "20.17.0"
 post_extraction_commands = ["npm install -g yarn"]
 
 [[generic]]
