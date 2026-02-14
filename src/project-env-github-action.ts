@@ -20,7 +20,10 @@ export default class ProjectEnvGithubAction {
             this.fixRunnerEnvironment();
 
             const configFile = core.getInput('config-file') || 'project-env.toml';
-            const cliVersion = core.getInput('cli-version') || (await this.resolveLatestProjectEnvCliVersion());
+            const cliVersionInput = core.getInput('cli-version');
+            const cliVersion = (!cliVersionInput || cliVersionInput === 'latest')
+                ? await this.resolveLatestProjectEnvCliVersion()
+                : cliVersionInput;
             const cliDebug = core.getInput('cli-debug') === 'true'
 
             const archiveUrl = await this.resolveProjectEnvCliArchiveUrl(cliVersion);
@@ -71,11 +74,18 @@ export default class ProjectEnvGithubAction {
         const archiveFilename = this.createProjectEnvCliArchiveFilename(cliVersion);
         const archiveUrl = `${archiveBaseUrl}/${archiveFilename}`;
 
-        if (this.getOsName() === 'macos' && this.getCpuArch() === 'aarch64' && !(await this.archiveUrlExists(archiveUrl))) {
-            return `${archiveBaseUrl}/${this.createProjectEnvCliArchiveFilename(cliVersion, 'amd64')}`
-        } else {
-            return `${archiveBaseUrl}/${archiveFilename}`
+        // On macOS ARM, check if native archive exists; fall back to amd64 via Rosetta 2
+        if (this.getOsName() === 'macos' && this.getCpuArch() === 'aarch64') {
+            if (await this.archiveUrlExists(archiveUrl)) {
+                return archiveUrl;
+            }
+
+            const fallbackUrl = `${archiveBaseUrl}/${this.createProjectEnvCliArchiveFilename(cliVersion, 'amd64')}`;
+            core.warning(`No native macOS ARM archive found for v${cliVersion}, falling back to amd64 (Rosetta 2)`);
+            return fallbackUrl;
         }
+
+        return archiveUrl;
     }
 
     private createProjectEnvCliArchiveBaseUrl(cliVersion: string) {
@@ -110,22 +120,13 @@ export default class ProjectEnvGithubAction {
     }
 
     private getCpuArch() {
-        if (os.platform() === 'darwin') {
-            switch (os.arch()) {
-                case "x64":
-                    return 'amd64'
-                case "arm64":
-                    return 'aarch64'
-                default:
-                    throw new Error(`unsupported CPU arch ${process.arch}`)
-            }
-        } else {
-            switch (os.arch()) {
-                case "x64":
-                    return 'amd64'
-                default:
-                    throw new Error(`unsupported CPU arch ${process.arch}`)
-            }
+        switch (os.arch()) {
+            case "x64":
+                return 'amd64'
+            case "arm64":
+                return 'aarch64'
+            default:
+                throw new Error(`unsupported CPU arch ${os.arch()}`)
         }
     }
 

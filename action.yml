@@ -5,12 +5,17 @@ branding:
   color: 'gray-dark'
 inputs:
   cli-version:
-    description: 'Version of Project-Env CLI to use'
-    required: true
+    description: 'Version of Project-Env CLI to use (e.g. "3.26.0"). Defaults to the latest release.'
+    required: false
+    default: 'latest'
   cli-debug:
     description: 'Whether to activate the debug mode of the Project-Env CLI'
     required: false
     default: 'false'
+  config-file:
+    description: 'Path to the project-env.toml configuration file'
+    required: false
+    default: 'project-env.toml'
 runs:
-  using: 'node20'
+  using: 'node22'
   main: 'dist/index.js'

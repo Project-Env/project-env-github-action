@@ -3,43 +3,49 @@ name: Release
 on:
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-13, macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-15-intel, macos-latest, windows-latest, ubuntu-latest, ubuntu-24.04-arm]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-nodemodules-${{ hashFiles('package.json') }}
-          restore-keys: ${{ runner.os }}-nodemodules
-      - uses: Project-Env/project-env-github-action@v1.5.0
+          node-version-file: .node-version
+          cache: npm
       - run: npm install
       - run: npm test
+
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-nodemodules-${{ hashFiles('package.json') }}
-          restore-keys: ${{ runner.os }}-nodemodules
-      - uses: Project-Env/project-env-github-action@v1.5.0
+          node-version-file: .node-version
+          cache: npm
       - run: npm install
       - run: npm run package
-      - run: |
+      - name: Commit and push distribution
+        run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -m "Update distribution" -a
-      - uses: ad-m/github-push-action@master
-        with:
-          branch: main
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: release-drafter/release-drafter@v6.0.0
+          git add dist/
+          git commit -m "Update distribution" || echo "No changes to commit"
+          git push
+      - uses: release-drafter/release-drafter@6db134d15f3909ccc9eefd369f02bd1e9cffdf97 # v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -3,8 +3,12 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
-      interval: 'daily'
-  - package-ecosystem: "github-actions"
-    directory: "/"
+      interval: 'weekly'
+    commit-message:
+      prefix: 'deps'
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "daily"
+      interval: 'weekly'
+    commit-message:
+      prefix: 'ci'
