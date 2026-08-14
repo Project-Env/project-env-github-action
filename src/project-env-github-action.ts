@@ -71,6 +71,8 @@ export default class ProjectEnvGithubAction {
         const archiveFilename = this.createProjectEnvCliArchiveFilename(cliVersion);
         const archiveUrl = `${archiveBaseUrl}/${archiveFilename}`;
 
+        // Only macOS falls back to the amd64 archive, because Rosetta can run it.
+        // On Linux aarch64 there is no such translation, so a missing archive must fail.
         if (this.getOsName() === 'macos' && this.getCpuArch() === 'aarch64' && !(await this.archiveUrlExists(archiveUrl))) {
             return `${archiveBaseUrl}/${this.createProjectEnvCliArchiveFilename(cliVersion, 'amd64')}`
         } else {
@@ -110,22 +112,13 @@ export default class ProjectEnvGithubAction {
     }
 
     private getCpuArch() {
-        if (os.platform() === 'darwin') {
-            switch (os.arch()) {
-                case "x64":
-                    return 'amd64'
-                case "arm64":
-                    return 'aarch64'
-                default:
-                    throw new Error(`unsupported CPU arch ${process.arch}`)
-            }
-        } else {
-            switch (os.arch()) {
-                case "x64":
-                    return 'amd64'
-                default:
-                    throw new Error(`unsupported CPU arch ${process.arch}`)
-            }
+        switch (os.arch()) {
+            case "x64":
+                return 'amd64'
+            case "arm64":
+                return 'aarch64'
+            default:
+                throw new Error(`unsupported CPU arch ${os.arch()}`)
         }
     }
 
