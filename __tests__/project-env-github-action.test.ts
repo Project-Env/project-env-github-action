@@ -1,4 +1,4 @@
-import ProjectEnvGithubAction from "../src/project-env-github-action";
+import ProjectEnvGithubAction from "../src/project-env-github-action.js";
 import * as os from "os";
 
 describe('Project-Env Github Action', () => {
