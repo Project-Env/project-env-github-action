@@ -1,17 +1,23 @@
-import ProjectEnvGithubAction from "../src/project-env-github-action";
-import * as os from "os";
+import {jest} from '@jest/globals';
+import {createRequire} from 'module';
 
-jest.mock("os", () => ({
-    ...jest.requireActual("os"),
+// Only platform and arch are stubbed. The rest of the module is kept, because
+// @actions/core imports other members such as EOL from it.
+const actualOs = createRequire(import.meta.url)('os');
+
+jest.unstable_mockModule('os', () => ({
+    ...actualOs,
+    default: actualOs,
     platform: jest.fn(),
     arch: jest.fn()
 }));
 
-const mockedOs = os as jest.Mocked<typeof os>;
+const os = await import('os');
+const {default: ProjectEnvGithubAction} = await import('../src/project-env-github-action.js');
 
 function archiveFilename(platform: string, arch: string) {
-    mockedOs.platform.mockReturnValue(platform as any);
-    mockedOs.arch.mockReturnValue(arch as any);
+    (os.platform as any).mockReturnValue(platform);
+    (os.arch as any).mockReturnValue(arch);
 
     return (new ProjectEnvGithubAction() as any).createProjectEnvCliArchiveFilename('3.27.0');
 }

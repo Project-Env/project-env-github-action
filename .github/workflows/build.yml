@@ -9,10 +9,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13, macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-15-intel, macos-latest, windows-latest, ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
         with:
           path: node_modules
           key: ${{ runner.os }}-nodemodules-${{ hashFiles('package.json') }}
