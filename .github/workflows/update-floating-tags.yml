@@ -1,0 +1,46 @@
+name: Update floating tags
+
+# Consumers should be able to use a short tag such as @v1 instead of @v1.6.0.
+# Those short tags are ordinary git tags which are moved to every new release.
+# The release tag itself only exists once the drafted release is published,
+# which is why this runs on the release event and not as part of the release
+# workflow.
+
+on:
+  release:
+    types: [ published ]
+
+permissions: {}
+
+jobs:
+  update-floating-tags:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ !github.event.release.prerelease }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+
+          if ! printf '%s' "$TAG_NAME" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "$TAG_NAME is not a release tag, nothing to move"
+            exit 0
+          fi
+
+          major="${TAG_NAME%%.*}"
+          minor="${TAG_NAME%.*}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for floating_tag in "$major" "$minor"; do
+            echo "moving $floating_tag to $TAG_NAME"
+            git tag --force "$floating_tag" "$TAG_NAME"
+            git push --force origin "refs/tags/$floating_tag"
+          done
